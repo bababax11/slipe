@@ -5,7 +5,7 @@ import numpy as np
 import wx
 from wx.core import CommandEvent
 from .errors import ChoiceOfMovementError, GameError
-from .game_state import GameState
+from .game_state import GameState, Winner
 
 logger = getLogger(__name__)
 
@@ -141,14 +141,14 @@ class Frame(wx.Frame):
         self.timer.Stop()
         self.CPU_thinking = False
 
-    def check_game_end(self, state: int):
-        if state == 1:
+    def check_game_end(self, state: Winner):
+        if state == Winner.plus:
             print(self.gs)
             print("先手勝利")
             self.finished = True
             self.SetStatusText("先手勝利")
             print(self.logs)
-        elif state == -1:
+        elif state == Winner.minus:
             print(self.gs)
             print("後手勝利")
             self.finished = True

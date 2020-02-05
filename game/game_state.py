@@ -1,5 +1,5 @@
 from typing import *
-from enum import IntEnum
+from enum import Enum, IntEnum, auto
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
@@ -15,6 +15,12 @@ class Drc(IntEnum):
 
 DIRECTIONS = list(map(np.array, ([0, 1], [0, -1],
                                  [1, 0], [-1, 0])))
+
+
+class Winner(Enum):
+    not_ended = auto()
+    plus = auto()
+    minus = auto()
 
 
 class GameState:
@@ -45,7 +51,7 @@ class GameState:
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 4 and 0 <= ij[1] <= 4
 
-    def move_d_normalize(self, i: int, j: int, d: np.ndarray) -> int:
+    def move_d_normalize(self, i: int, j: int, d: np.ndarray) -> Winner:
         """規格化されてないd方向への移動.
         returnは勝利判定.
         無効な移動あるいはdが斜め移動ならChoiceOfMovementErrorを送出"""
@@ -54,7 +60,7 @@ class GameState:
         d //= int(np.linalg.norm(d, np.inf))
         return self.move(i, j, d)
 
-    def move_by_drc(self, i: int, j: int, drc: Drc) -> int:
+    def move_by_drc(self, i: int, j: int, drc: Drc) -> Winner:
         """DIRECTIONS[drc]方向への移動.
         returnは勝利判定.
         無効な移動ならChoiceOfMovementErrorを送出"""
@@ -63,7 +69,7 @@ class GameState:
         direction = DIRECTIONS[drc]
         return self.move(i, j, direction)
 
-    def move(self, i: int, j: int, direction: np.ndarray) -> int:
+    def move(self, i: int, j: int, direction: np.ndarray) -> Winner:
         ij = np.array([i, j]) + direction
         while self.boundary_check(ij) and self.board[ij[0], ij[1]] == 0:
             ij += direction
@@ -75,17 +81,17 @@ class GameState:
 
         return self.turn_change()
 
-    def turn_change(self) -> int:
+    def turn_change(self) -> Winner:
         """勝利判定とターン交代"""
         center = self.board[2, 2]
         if center == 2:
-            return 1  # 先手勝利
+            return Winner.plus  # 先手勝利
         elif center == -2:
-            return -1  # 後手勝利
+            return Winner.minus  # 後手勝利
         self.turn *= -1
-        return 0
+        return Winner.not_ended
 
-    def random_play(self) -> int:
+    def random_play(self) -> Winner:
         """ランダムに手を打つ.
         returnは勝利判定"""
         while True:
