@@ -1,5 +1,6 @@
 from typing import *
 from enum import Enum, IntEnum, auto
+import copy
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
@@ -26,13 +27,12 @@ class Winner(Enum):
 class GameState:
 
     def __init__(self) -> None:
-        self.board = np.array([
-            [-1, -1, -2, -1, -1],
-            [0] * 5,
-            [0] * 5,
-            [0] * 5,
-            [1, 1, 2, 1, 1]
-        ], dtype=np.int8)
+        self.board = np.array(
+            [[-1, -1, -2, -1, -1],
+             [ 0,  0,  0,  0,  0],
+             [ 0,  0,  0,  0,  0],
+             [ 0,  0,  0,  0,  0],
+             [ 1,  1,  2,  1,  1]], dtype=np.int8)
         self.turn = 1  # +が先攻
 
     def to_input(self) -> np.ndarray:
@@ -126,3 +126,21 @@ class GameState:
             elif self.board[3, 2] != 0:
                 return self._move(king[0], king[1], np.array([1, 0]))
         return None
+
+
+    def output_to_move_max(self, output: 'array_like') -> Winner:
+        output_ = copy.deepcopy(output)
+        for _ in range(len(output)):
+            argmax = np.argmax(output_)
+            output_[argmax] = -1.0
+            try:
+                state = self.move_by_drc(*np.unravel_index(argmax, (5, 5, 4)))
+            except ChoiceOfMovementError:
+                continue
+            else:
+                # print(argmax)
+                # print(np.unravel_index(argmax, (5, 5, 4)))
+                return state
+        return self.random_play()
+        
+
