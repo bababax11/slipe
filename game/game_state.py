@@ -29,6 +29,15 @@ class GameState:
         ], dtype=np.int8)
         self.turn = 1  # +が先攻
 
+    def to_input(self) -> np.ndarray:
+        """強化学習用の入力"""
+        arr = np.empty((4, 5, 5), dtype=bool)
+        arr[0] = self.board == 1
+        arr[1] = self.board == -1
+        arr[2] = self.board == 2
+        arr[3] = self.board == -2
+        return arr
+
     def __repr__(self):
         return str(self.board)
 
