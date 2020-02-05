@@ -35,7 +35,7 @@ class GameState:
              [1,  1,  2,  1,  1]], dtype=np.int8)
         self.turn = 1  # +が先攻
 
-    def to_input(self) -> np.ndarray:
+    def to_inputs(self) -> np.ndarray:
         """強化学習用の入力"""
         arr = np.empty((4, 5, 5), dtype=bool)
         arr[0] = self.board == 1
@@ -127,13 +127,13 @@ class GameState:
                 return self._move(king[0], king[1], np.array([1, 0]))
         return None
 
-    def output_to_move_max(self, output: 'array_like') -> Winner:
+    def outputs_to_move_max(self, outputs: 'array_like') -> Winner:
         """出力から最も高い確率のものに有効手を指す.
         returnは勝利判定"""
-        output_ = copy.deepcopy(output)
+        outputs_ = copy.deepcopy(outputs)
         for _ in range(10):
-            argmax = np.argmax(output_)
-            output_[argmax] = -1.0
+            argmax = np.argmax(outputs_)
+            outputs_[argmax] = -1.0
             try:
                 state = self.move_by_drc(*np.unravel_index(argmax, (5, 5, 4)))
             except ChoiceOfMovementError:
@@ -142,14 +142,15 @@ class GameState:
                 # print(argmax)
                 # print(np.unravel_index(argmax, (5, 5, 4)))
                 return state
+        return self.random_play()
 
-    def output_to_move_random(self, output: np.ndarray) -> Winner:
+    def outputs_to_move_random(self, outputs: np.ndarray) -> Winner:
         """出力からランダムに有効手を指す.
         ただしoutputは確率分布になっている必要がある(1への規格化が必要).
         returnは勝利判定"""
-        num_choices = min(np.sum(output != 0), 10)
+        num_choices = min(np.sum(outputs != 0), 10)
         random_choices = np.random.choice(
-            100, p=output, size=num_choices, replace=False)
+            100, p=outputs, size=num_choices, replace=False)
         for r in random_choices:
             try:
                 state = self.move_by_drc(*np.unravel_index(r, (5, 5, 4)))
