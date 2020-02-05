@@ -65,7 +65,7 @@ class GameState:
         returnは勝利判定.
         無効な移動ならChoiceOfMovementErrorを送出"""
         if self.board[i, j] * self.turn <= 0:
-            raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
+            raise ChoiceOfMovementError(f"選択したコマが色違いか存在しない {i, j}")
         direction = DIRECTIONS[drc]
         return self._move(i, j, direction)
 
@@ -142,7 +142,8 @@ class GameState:
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.
         returnは勝利判定と打った手"""
-        outputs_ = copy.deepcopy(outputs)
+        outputs_ = outputs
+        # outputs_ = copy.deepcopy(outputs)
         for _ in range(10):
             argmax = np.argmax(outputs_)
             outputs_[argmax] = -1.0
