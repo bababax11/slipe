@@ -127,9 +127,9 @@ class GameState:
                 return self._move(king[0], king[1], np.array([1, 0]))
         return None
 
-    def outputs_to_move_max(self, outputs: 'array_like') -> Winner:
+    def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.
-        returnは勝利判定"""
+        returnは勝利判定と打った手"""
         outputs_ = copy.deepcopy(outputs)
         for _ in range(10):
             argmax = np.argmax(outputs_)
@@ -142,12 +142,12 @@ class GameState:
                 # print(argmax)
                 # print(np.unravel_index(argmax, (5, 5, 4)))
                 return state
-        return self.random_play()
+        return self.random_play(), argmax
 
-    def outputs_to_move_random(self, outputs: np.ndarray) -> Winner:
+    def outputs_to_move_random(self, outputs: np.ndarray) -> Tuple[Winner, int]:
         """出力からランダムに有効手を指す.
         ただしoutputは確率分布になっている必要がある(1への規格化が必要).
-        returnは勝利判定"""
+        returnは勝利判定と打った手"""
         num_choices = min(np.sum(outputs != 0), 10)
         random_choices = np.random.choice(
             100, p=outputs, size=num_choices, replace=False)
@@ -161,4 +161,4 @@ class GameState:
                 # print(np.unravel_index(r, (5, 5, 4)))
                 return state
 
-        return self.random_play()
+        return self.random_play(), r
