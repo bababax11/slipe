@@ -38,7 +38,7 @@ class GameState:
 
     def move_d_normalize(self, i: int, j: int, d: np.ndarray) -> int:
         if d[0] != 0 and d[1] != 0:
-            raise ChoiceOfMovementError(f"あらぬ方向{ij} -> {ij2}")
+            raise ChoiceOfMovementError(f"あらぬ方向{d}")
         d //= int(np.linalg.norm(d, np.inf))
         return self.move(i, j, d)
 
@@ -50,7 +50,7 @@ class GameState:
 
     def move(self, i: int, j: int, direction: np.ndarray) -> int:
         ij = np.array([i, j]) + direction
-        while self.boundary_check(ij) and self.board[ij[0], ij[1]] == 0 :
+        while self.boundary_check(ij) and self.board[ij[0], ij[1]] == 0:
             ij += direction
         ij -= direction
         if tuple(ij) == (i, j):
