@@ -44,7 +44,7 @@ class GameState:
         arr[3] = self.board == -2
         return arr
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.board)
 
     @staticmethod
@@ -58,7 +58,7 @@ class GameState:
         if d[0] != 0 and d[1] != 0:
             raise ChoiceOfMovementError(f"あらぬ方向{d}")
         d //= int(np.linalg.norm(d, np.inf))
-        return self.move(i, j, d)
+        return self._move(i, j, d)
 
     def move_by_drc(self, i: int, j: int, drc: Drc) -> Winner:
         """DIRECTIONS[drc]方向への移動.
@@ -67,9 +67,9 @@ class GameState:
         if self.board[i, j] * self.turn <= 0:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = DIRECTIONS[drc]
-        return self.move(i, j, direction)
+        return self._move(i, j, direction)
 
-    def move(self, i: int, j: int, direction: np.ndarray) -> Winner:
+    def _move(self, i: int, j: int, direction: np.ndarray) -> Winner:
         ij = np.array([i, j]) + direction
         while self.boundary_check(ij) and self.board[ij[0], ij[1]] == 0:
             ij += direction
@@ -79,9 +79,9 @@ class GameState:
         self.board[ij[0], ij[1]], self.board[i, j] = \
             self.board[i, j], self.board[ij[0], ij[1]]
 
-        return self.turn_change()
+        return self._turn_change()
 
-    def turn_change(self) -> Winner:
+    def _turn_change(self) -> Winner:
         """勝利判定とターン交代"""
         center = self.board[2, 2]
         if center == 2:
@@ -100,7 +100,7 @@ class GameState:
             drc = random.randint(0, 3)
             try:
                 state = self.move_by_drc(i, j, drc)
-            except GameError:
+            except ChoiceOfMovementError:
                 continue
             else:
                 return state

@@ -4,7 +4,7 @@ from logging import getLogger
 import numpy as np
 import wx
 from wx.core import CommandEvent
-from .errors import ChoiceOfMovementError, GameError
+from .errors import ChoiceOfMovementError
 from .game_state import GameState, Winner
 
 logger = getLogger(__name__)
@@ -116,7 +116,7 @@ class Frame(wx.Frame):
         try:
             state = self.gs.move_d_normalize(
                 self.selected_y, self.selected_x, d)
-        except GameError as e:
+        except ChoiceOfMovementError as e:
             print(e)
             print("入力が不正です。もう一度入力してください。")
             self.piece_selected = False
