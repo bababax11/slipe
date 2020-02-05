@@ -3,7 +3,7 @@ from enum import Enum, IntEnum, auto
 import copy
 import random
 import numpy as np
-from .errors import ChoiceOfMovementError, GameError
+from .errors import ChoiceOfMovementError
 
 
 class Drc(IntEnum):
@@ -74,7 +74,7 @@ class GameState:
         while self.boundary_check(ij) and self.board[ij[0], ij[1]] == 0:
             ij += direction
         ij -= direction
-        if tuple(ij) == (i, j):
+        if ij[0] == i and ij[1] == j:
             raise ChoiceOfMovementError(f"移動できない方向{i, j}")
         self.board[ij[0], ij[1]], self.board[i, j] = \
             self.board[i, j], self.board[ij[0], ij[1]]
