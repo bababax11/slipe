@@ -169,7 +169,7 @@ if __name__ == '__main__':
     DQN_MODE = True  # 1がDQN、0がDDQNです
     LENDER_MODE = False  # 0は学習後も描画なし、1は学習終了後に描画する
 
-    num_episodes = 3  # 299  # 総試行回数
+    num_episodes = 1000  # 総試行回数
     max_number_of_steps = 50  # 1試行のstep数
     goal_average_reward = 50  # この報酬を超えると学習終了
     num_consecutive_iterations = 10  # 学習完了評価の平均計算を行う試行回数
@@ -238,8 +238,9 @@ if __name__ == '__main__':
             if state != Winner.not_ended:
                 total_reward_vec = np.hstack(
                     (total_reward_vec[1:], episode_reward))  # 報酬を記録
-                print('%d/%d: Episode finished after %d time steps / mean %f'
-                      % (episode+1, num_episodes, t + 1, total_reward_vec.mean()))
+                print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
+                      % (episode+1, num_episodes, t + 1, total_reward_vec.mean(),
+                      'plus' if state == Winner.plus else 'minus'))
                 break
 
         # 複数施行の平均報酬で終了を判断
@@ -249,5 +250,5 @@ if __name__ == '__main__':
             if isrender == False:   # 学習済みフラグを更新
                 isrender = True
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    mainQN.save(None, f"results/001_QLearning/test-{d}-mainQN.h5")
-    targetQN.save(None, f"results/001_QLearning/test-{d}-targetQNh5")
+    mainQN.save(None, f"results/001_QLearning/{d}-mainQN-1000times.h5")
+    targetQN.save(None, f"results/001_QLearning/{d}-targetQN-1000times.h5")
