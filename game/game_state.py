@@ -131,7 +131,7 @@ class GameState:
         """出力から最も高い確率のものに有効手を指す.
         returnは勝利判定"""
         output_ = copy.deepcopy(output)
-        for _ in range(len(output)):
+        for _ in range(10):
             argmax = np.argmax(output_)
             output_[argmax] = -1.0
             try:
@@ -143,13 +143,13 @@ class GameState:
                 # print(np.unravel_index(argmax, (5, 5, 4)))
                 return state
 
-    def output_to_move_random(self, output: 'array_like') -> Winner:
+    def output_to_move_random(self, output: np.ndarray) -> Winner:
         """出力からランダムに有効手を指す.
         ただしoutputは確率分布になっている必要がある(1への規格化が必要).
         returnは勝利判定"""
-        num_zero_inds = np.sum(output == 0)
+        num_choices = min(np.sum(output != 0), 10)
         random_choices = np.random.choice(
-            100, p=output, size=num_zero_inds, replace=False)
+            100, p=output, size=num_choices, replace=False)
         for r in random_choices:
             try:
                 state = self.move_by_drc(*np.unravel_index(r, (5, 5, 4)))
