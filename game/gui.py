@@ -1,0 +1,221 @@
+from typing import Optional
+from enum import IntEnum
+from logging import getLogger
+import numpy as np
+import wx
+from wx.core import CommandEvent
+from .errors import ChoiceOfMovementError, GameError
+from .game_state import GameState
+
+logger = getLogger(__name__)
+
+
+def start():
+    app = wx.App()
+    Frame().Show()
+    app.MainLoop()
+
+
+def notify(caption, message):
+    dialog = wx.MessageDialog(None, message=message,
+                              caption=caption, style=wx.OK)
+    dialog.ShowModal()
+    dialog.Destroy()
+
+
+class GameMode(IntEnum):
+    humans_play = 1
+    black_human_vs_random = 2
+    white_human_vs_random = 3
+
+
+class Frame(wx.Frame):
+
+    def __init__(self) -> None:
+        self.gs = GameState()
+        self.logs = []
+        self.piece_selected = False
+        self.finished = False
+        self.CPU_thinking = False
+        self.game_mode = GameMode.humans_play
+        window_title = 'Slipe'
+        window_size = (400, 400)
+        wx.Frame.__init__(self, None, -1, window_title, size=window_size)
+        # panel
+        self.panel = wx.Panel(self)
+        self.panel.Bind(wx.EVT_LEFT_DOWN, self.try_move)
+        self.panel.Bind(wx.EVT_PAINT, self.refresh)
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+
+        menu = wx.Menu()
+        menu.Append(GameMode.humans_play, u"New Game Humans")
+        menu.Append(GameMode.black_human_vs_random,
+                    u"New Game (Black) vs random")
+        menu.Append(GameMode.white_human_vs_random,
+                    u"New Game (White) vs random")
+        menu.AppendSeparator()
+        # menu.Append(5, u"Flip Vertical")
+        # menu.Append(6, u"Show/Hide Player evaluation")
+        # menu.AppendSeparator()
+        menu.Append(9, u"quit")
+        menu_bar = wx.MenuBar()
+        menu_bar.Append(menu, u"menu")
+        self.SetMenuBar(menu_bar)
+
+        self.Bind(wx.EVT_MENU, self.handle_new_game, id=GameMode.humans_play)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.black_human_vs_random)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.white_human_vs_random)
+        self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
+
+        # status bar
+        self.CreateStatusBar()
+
+    def handle_new_game(self, event) -> None:
+        self.game_mode = event.GetId()
+        print(self.logs)
+        self.gs = GameState()
+        self.logs = []
+        self.finished = False
+        self.CPU_thinking = False
+        self.piece_selected = False
+        if self.game_mode == GameMode.humans_play or \
+                self.game_mode == GameMode.black_human_vs_random:
+            self.panel.Refresh()
+        elif self.game_mode == GameMode.white_human_vs_random:
+            self.gs.random_play()
+            self.panel.Refresh()
+
+    def try_move(self, event):
+        if self.finished or self.CPU_thinking:
+            return
+        event_x, event_y = event.GetX(), event.GetY()
+        w, h = self.panel.GetSize()
+
+        if not self.piece_selected:
+            x = int(event_x / (w / 5))
+            y = int(event_y / (h / 5))
+            if self.gs.board[y, x] * self.gs.turn > 0:
+                self.selected_x, self.selected_y = x, y
+                self.piece_selected = True
+                self.panel.Refresh()
+            return
+
+        x = int(event_x / (w / 5))
+        y = int(event_y / (h / 5))
+        if x == self.selected_x and y == self.selected_y:
+            self.piece_selected = False
+            self.panel.Refresh()
+            return
+
+        d = np.array([y - self.selected_y, x - self.selected_x])
+        print(d)
+        try:
+            state = self.gs.move_d_normalize(
+                self.selected_y, self.selected_x, d)
+        except GameError as e:
+            print(e)
+            print("入力が不正です。もう一度入力してください。")
+            self.piece_selected = False
+            self.panel.Refresh()
+            return
+        # print(self.gs)
+        self.logs.append((y, x, d))
+        self.check_game_end(state)
+        self.piece_selected = False
+        self.panel.Refresh()
+        if self.game_mode == GameMode.black_human_vs_random or \
+                self.game_mode == GameMode.white_human_vs_random:
+            self.timer.Start(1000)  # 1000ms後OnTimer()が反応
+            self.CPU_thinking = True
+            # self.gs.random_play()
+            # self.panel.Refresh()
+
+    def OnTimer(self, event):
+        state = self.gs.random_play()
+        self.check_game_end(state)
+        self.panel.Refresh()
+        self.timer.Stop()
+        self.CPU_thinking = False
+
+    def check_game_end(self, state: int):
+        if state == 1:
+            print(self.gs)
+            print("先手勝利")
+            self.finished = True
+            self.SetStatusText("先手勝利")
+            print(self.logs)
+        elif state == -1:
+            print(self.gs)
+            print("後手勝利")
+            self.finished = True
+            self.SetStatusText("後手勝利")
+            print(self.logs)
+
+    def update_status_bar(self):
+        if self.finished:
+            return
+        if self.CPU_thinking:
+            msg = "CPUが考慮中です"
+        else:
+            msg = "現在の手番: " + (
+                "黒" if self.gs.turn == 1 else "白")
+        self.SetStatusText(msg)
+
+    def refresh(self, event):
+        dc = wx.PaintDC(self.panel)
+        # self.update_status_bar()
+
+        w, h = self.panel.GetSize()
+        # background
+        dc.SetBrush(wx.Brush("light gray"))
+        dc.DrawRectangle(0, 0, w, h)
+        # grid
+        dc.SetBrush(wx.Brush("black"))
+        px, py = w / 5, h / 5
+        for y in range(8):
+            dc.DrawLine(y * px, 0, y * px, h)
+            dc.DrawLine(0, y * py, w, y * py)
+        dc.DrawLine(w - 1, 0, w - 1, h - 1)
+        dc.DrawLine(0, h - 1, w - 1, h - 1)
+
+        # 中央の印
+        dc.SetBrush(wx.Brush("light grey"))
+        dc.DrawRectangle(2 * px + px/4,
+                         2 * py + py/4, px/2, py/2)
+        # stones
+        # TODO: キングのデザイン
+        brushes = {
+            -2: wx.Brush("white"),
+            -1: wx.Brush("white"),
+            1: wx.Brush("black"),
+            2: wx.Brush("black"),
+        }
+
+        for i in range(5):
+            for j in range(5):
+                c = self.gs.board[i, j]
+                if c != 0:
+                    dc.SetBrush(brushes[c])
+                    dc.DrawRectangle(j * px, i * py, px, py)
+                    if c == -2 or c == 2:
+                        dc.SetBrush(wx.Brush("white"))
+                        dc.DrawRectangle(j * px + px/4,
+                                         i * py + py/4, px/2, py/2)
+                    # TODO: デザイン改善の余地
+                    if self.piece_selected and \
+                            j == self.selected_x and i == self.selected_y:
+                        dc.SetBrush(wx.Brush("grey"))
+                        dc.DrawEllipse(j * px + px/4,
+                                       i * py + py/4, px/2, py/2)
+        self.update_status_bar()
+
+    def handle_quit(self, event: CommandEvent):
+        self.Close()
+
+
+if __name__ == "__main__":
+    start()
