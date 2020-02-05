@@ -157,7 +157,7 @@ def get_action(board: np.ndarray, episode: int, mainQN: QNetwork, gs: GameState)
 
     if epsilon <= np.random.uniform(0, 1):
         retTargetQs = mainQN.model.predict(board)[0]
-        s = gs.outputs_to_move_random(retTargetQs)  # 最大の報酬を返す行動を選択する
+        s = gs.outputs_to_move_max(retTargetQs)  # 最大の報酬を返す行動を選択する
 
     else:
         s = gs.random_play()  # ランダムに行動する
@@ -169,8 +169,8 @@ if __name__ == '__main__':
     DQN_MODE = True  # 1がDQN、0がDDQNです
     LENDER_MODE = False  # 0は学習後も描画なし、1は学習終了後に描画する
 
-    num_episodes = 1000  # 総試行回数
-    max_number_of_steps = 50  # 1試行のstep数
+    num_episodes = 60  # 総試行回数
+    max_number_of_steps = 25  # 1試行のstep数
     goal_average_reward = 50  # この報酬を超えると学習終了
     num_consecutive_iterations = 10  # 学習完了評価の平均計算を行う試行回数
     total_reward_vec = np.zeros(num_consecutive_iterations)  # 各試行の報酬を格納
@@ -192,12 +192,12 @@ if __name__ == '__main__':
     for episode in trange(num_episodes):  # 試行数分繰り返す
         gs = GameState()
         state = gs.random_play()  # 1step目は適当な行動をとる
-        board = gs.to_inputs()
         episode_reward = 0
 
         targetQN = mainQN   # 行動決定と価値計算のQネットワークをおなじにする
 
         for t in range(max_number_of_steps + 1):  # 1試行のループ
+            board = gs.to_inputs()
             # if islearned and LENDER_MODE:  # 学習終了したらcartPoleを描画する
             #     env.render()
             #     print(state[0, 0])  # カートのx位置を出力するならコメントはずす
@@ -214,18 +214,14 @@ if __name__ == '__main__':
 
             # 報酬を設定し、与える
             # next_state = np.zeros(state.shape)  # 次の状態s_{t+1}はない
-            if state == Winner.plus:
+            if state == Winner.minus:
                 reward = 1  # 報酬クリッピング、報酬は1, 0, -1に固定
-            elif state == Winner.minus:
-                reward = -1  # 立ったまま195step超えて終了時は報酬
             else:
                 reward = 0  # 各ステップで立ってたら報酬追加（はじめからrewardに1が入っているが、明示的に表す）
 
-            episode_reward += reward  # 合計報酬を更新
             next_board = gs.to_inputs()
 
-            memory.add((board, action, reward, next_board))     # メモリの更新する
-            board = next_board  # 状態更新
+            # board = next_board  # 状態更新
 
             # Qネットワークの重みを学習・更新する replay
             if (len(memory) > batch_size) and not islearned:
@@ -233,6 +229,28 @@ if __name__ == '__main__':
 
             if DQN_MODE:
                 targetQN = mainQN  # 行動決定と価値計算のQネットワークをおなじにする
+
+            # 1施行終了時の処理
+            if state != Winner.not_ended:
+                episode_reward += reward  # 合計報酬を更新
+                memory.add((board, action, reward, next_board))     # メモリの更新する
+                total_reward_vec = np.hstack(
+                    (total_reward_vec[1:], episode_reward))  # 報酬を記録
+                print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
+                      % (episode+1, num_episodes, t + 1, total_reward_vec.mean(),
+                      'plus' if state == Winner.plus else 'minus'))
+                break
+
+            state, _ = gs.random_play()
+
+            if state == Winner.plus:
+                reward = -1  # 立ったまま195step超えて終了時は報酬
+            else:
+                reward = 0  # 各ステップで立ってたら報酬追加（はじめからrewardに1が入っているが、明示的に表す）
+            
+            episode_reward += reward  # 合計報酬を更新
+            memory.add((board, action, reward, next_board))     # メモリの更新する
+
 
             # 1施行終了時の処理
             if state != Winner.not_ended:
@@ -250,5 +268,5 @@ if __name__ == '__main__':
             if isrender == False:   # 学習済みフラグを更新
                 isrender = True
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    mainQN.save(None, f"results/001_QLearning/{d}-mainQN-1000times.h5")
-    targetQN.save(None, f"results/001_QLearning/{d}-targetQN-1000times.h5")
+    mainQN.save(None, f"results/001_QLearning/{d}-mainQN-60times.h5")
+    targetQN.save(None, f"results/001_QLearning/{d}-targetQN-60times.h5")
