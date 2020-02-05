@@ -19,7 +19,7 @@ from .config import Config
 logger = getLogger(__name__)
 
 
-class BrutusModel:
+class SlipeModel:
     def __init__(self, config: Config):
         self.config = config
         self.model = None  # type: Model
@@ -70,7 +70,7 @@ class BrutusModel:
         x = Activation("relu")(x)
         return x
 
-        @staticmethod
+    @staticmethod
     def fetch_digest(weight_path):
         if os.path.exists(weight_path):
             m = hashlib.sha256()
