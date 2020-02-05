@@ -91,9 +91,16 @@ class GameState:
         self.turn *= -1
         return Winner.not_ended
 
-    def random_play(self) -> Winner:
+    def random_play(self, decided_pb=1) -> Winner:
         """ランダムに手を打つ.
+        ただし次の手で勝てるときはdecided_pbの確率で勝利手を打つ
         returnは勝利判定"""
+        if random.random() < decided_pb:
+            state = self.prior_checkmate()
+            if state is not None:
+                print('priority')
+                return state
+
         while True:
             i = random.randint(0, 4)
             j = random.randint(0, 4)
@@ -104,3 +111,18 @@ class GameState:
                 continue
             else:
                 return state
+
+    def prior_checkmate(self) -> Optional[Winner]:
+        king = np.where(self.board == self.turn * 2)
+        king = np.array([king[0][0], king[1][0]])
+        if king[0] == 2:
+            if king[1] > 2 and self.board[2, 1] != 0:
+                return self._move(king[0], king[1], np.array([0, -1]))
+            elif self.board[2, 3] != 0:
+                return self._move(king[0], king[1], np.array([0, 1]))
+        elif king[1] == 2:
+            if king[0] > 2 and self.board[1, 2] != 0:
+                return self._move(king[0], king[1], np.array([-1, 0]))
+            elif self.board[3, 2] != 0:
+                return self._move(king[0], king[1], np.array([1, 0]))
+        return None
