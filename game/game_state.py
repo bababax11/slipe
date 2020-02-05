@@ -37,11 +37,11 @@ class GameState:
 
     def to_inputs(self) -> np.ndarray:
         """強化学習用の入力"""
-        arr = np.empty((4, 5, 5), dtype=bool)
-        arr[0] = self.board == 1
-        arr[1] = self.board == -1
-        arr[2] = self.board == 2
-        arr[3] = self.board == -2
+        arr = np.empty((1, 4, 5, 5), dtype=bool)
+        arr[0, 0] = self.board == 1
+        arr[0, 1] = self.board == -1
+        arr[0, 2] = self.board == 2
+        arr[0, 3] = self.board == -2
         return arr
 
     def __repr__(self) -> str:
@@ -115,25 +115,28 @@ class GameState:
     def prior_checkmate(self) -> Optional[Tuple[Winner, int]]:
         king = np.where(self.board == self.turn * 2)
         king = np.array([king[0][0], king[1][0]])
-        if king[0] == 2:
-            if king[1] > 2 and self.board[2, 1] != 0:
-                return (self._move(king[0], king[1], np.array([0, -1])),
-                        self.to_outputs_index(king[0], king[1], Drc.l))
-            elif self.board[2, 3] != 0:
-                return (self._move(king[0], king[1], np.array([0, 1])),
-                        self.to_outputs_index(king[0], king[1], Drc.r))
-        elif king[1] == 2:
-            if king[0] > 2 and self.board[1, 2] != 0:
-                return (self._move(king[0], king[1], np.array([-1, 0])),
-                        self.to_outputs_index(king[0], king[1], Drc.b))
-            elif self.board[3, 2] != 0:
-                return (self._move(king[0], king[1], np.array([1, 0])),
-                        self.to_outputs_index(king[0], king[1], Drc.f))
+        try:
+            if king[0] == 2:
+                if king[1] > 2 and self.board[2, 1] != 0:
+                    return (self._move(king[0], king[1], np.array([0, -1])),
+                            self.to_outputs_index(king[0], king[1], Drc.l))
+                elif self.board[2, 3] != 0:
+                    return (self._move(king[0], king[1], np.array([0, 1])),
+                            self.to_outputs_index(king[0], king[1], Drc.r))
+            elif king[1] == 2:
+                if king[0] > 2 and self.board[1, 2] != 0:
+                    return (self._move(king[0], king[1], np.array([-1, 0])),
+                            self.to_outputs_index(king[0], king[1], Drc.b))
+                elif self.board[3, 2] != 0:
+                    return (self._move(king[0], king[1], np.array([1, 0])),
+                            self.to_outputs_index(king[0], king[1], Drc.f))
+        except ChoiceOfMovementError:
+            pass
         return None
 
     @staticmethod
     def to_outputs_index(i: int, j: int, drc: Drc) -> int:
-        return i * 40 + j * 5 + drc
+        return i * 20 + j * 4 + drc
 
 
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
