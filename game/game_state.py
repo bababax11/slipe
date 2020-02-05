@@ -46,12 +46,18 @@ class GameState:
         return 0 <= ij[0] <= 4 and 0 <= ij[1] <= 4
 
     def move_d_normalize(self, i: int, j: int, d: np.ndarray) -> int:
+        """規格化されてないd方向への移動.
+        returnは勝利判定.
+        無効な移動あるいはdが斜め移動ならChoiceOfMovementErrorを送出"""
         if d[0] != 0 and d[1] != 0:
             raise ChoiceOfMovementError(f"あらぬ方向{d}")
         d //= int(np.linalg.norm(d, np.inf))
         return self.move(i, j, d)
 
     def move_by_drc(self, i: int, j: int, drc: Drc) -> int:
+        """DIRECTIONS[drc]方向への移動.
+        returnは勝利判定.
+        無効な移動ならChoiceOfMovementErrorを送出"""
         if self.board[i, j] * self.turn <= 0:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = DIRECTIONS[drc]
@@ -70,6 +76,7 @@ class GameState:
         return self.turn_change()
 
     def turn_change(self) -> int:
+        """勝利判定とターン交代"""
         center = self.board[2, 2]
         if center == 2:
             return 1  # 先手勝利
@@ -79,6 +86,8 @@ class GameState:
         return 0
 
     def random_play(self) -> int:
+        """ランダムに手を打つ.
+        returnは勝利判定"""
         while True:
             i = random.randint(0, 4)
             j = random.randint(0, 4)
