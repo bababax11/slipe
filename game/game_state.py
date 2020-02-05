@@ -96,10 +96,10 @@ class GameState:
         ただし次の手で勝てるときはdecided_pbの確率で勝利手を打つ
         returnは勝利判定"""
         if random.random() < decided_pb:
-            state = self.prior_checkmate()
-            if state is not None:
-                print('priority')
-                return state
+            state_and_action = self.prior_checkmate()
+            if state_and_action is not None:
+                # print('priority')
+                return state_and_action
 
         while True:
             i = random.randint(0, 4)
@@ -110,22 +110,31 @@ class GameState:
             except ChoiceOfMovementError:
                 continue
             else:
-                return state
+                return state, self.to_outputs_index(i, j, drc)
 
-    def prior_checkmate(self) -> Optional[Winner]:
+    def prior_checkmate(self) -> Optional[Tuple[Winner, int]]:
         king = np.where(self.board == self.turn * 2)
         king = np.array([king[0][0], king[1][0]])
         if king[0] == 2:
             if king[1] > 2 and self.board[2, 1] != 0:
-                return self._move(king[0], king[1], np.array([0, -1]))
+                return (self._move(king[0], king[1], np.array([0, -1])),
+                        self.to_outputs_index(i, j, Drc.l))
             elif self.board[2, 3] != 0:
-                return self._move(king[0], king[1], np.array([0, 1]))
+                return (self._move(king[0], king[1], np.array([0, 1])),
+                        self.to_outputs_index(i, j, Drc.r))
         elif king[1] == 2:
             if king[0] > 2 and self.board[1, 2] != 0:
-                return self._move(king[0], king[1], np.array([-1, 0]))
+                return (self._move(king[0], king[1], np.array([-1, 0])),
+                        self.to_outputs_index(i, j, Drc.b))
             elif self.board[3, 2] != 0:
-                return self._move(king[0], king[1], np.array([1, 0]))
+                return (self._move(king[0], king[1], np.array([1, 0])),
+                        self.to_outputs_index(i, j, Drc.f))
         return None
+
+    @staticmethod
+    def to_outputs_index(i: int, j: int, drc: Drc) -> int:
+        return i * 40 + j * 5 + drc
+
 
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.
@@ -141,8 +150,8 @@ class GameState:
             else:
                 # print(argmax)
                 # print(np.unravel_index(argmax, (5, 5, 4)))
-                return state
-        return self.random_play(), argmax
+                return state, argmax
+        return self.random_play()
 
     def outputs_to_move_random(self, outputs: np.ndarray) -> Tuple[Winner, int]:
         """出力からランダムに有効手を指す.
@@ -159,6 +168,6 @@ class GameState:
             else:
                 # print(r)
                 # print(np.unravel_index(r, (5, 5, 4)))
-                return state
+                return state, r
 
-        return self.random_play(), r
+        return self.random_play()
