@@ -118,17 +118,17 @@ class GameState:
         if king[0] == 2:
             if king[1] > 2 and self.board[2, 1] != 0:
                 return (self._move(king[0], king[1], np.array([0, -1])),
-                        self.to_outputs_index(i, j, Drc.l))
+                        self.to_outputs_index(king[0], king[1], Drc.l))
             elif self.board[2, 3] != 0:
                 return (self._move(king[0], king[1], np.array([0, 1])),
-                        self.to_outputs_index(i, j, Drc.r))
+                        self.to_outputs_index(king[0], king[1], Drc.r))
         elif king[1] == 2:
             if king[0] > 2 and self.board[1, 2] != 0:
                 return (self._move(king[0], king[1], np.array([-1, 0])),
-                        self.to_outputs_index(i, j, Drc.b))
+                        self.to_outputs_index(king[0], king[1], Drc.b))
             elif self.board[3, 2] != 0:
                 return (self._move(king[0], king[1], np.array([1, 0])),
-                        self.to_outputs_index(i, j, Drc.f))
+                        self.to_outputs_index(king[0], king[1], Drc.f))
         return None
 
     @staticmethod
