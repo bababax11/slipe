@@ -167,7 +167,7 @@ def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs
     return s
 
 
-if __name__ == '__main__':
+def learn():
     config = Config()
     qc = config.Qlearn
 
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
         targetQN = mainQN   # 行動決定と価値計算のQネットワークをおなじにする
 
-        for t in range(qc.max_number_of_steps + 1):  # 2手のループ
+        for t in range(qc.max_number_of_steps):  # 2手のループ
             board = gs.to_inputs()
 
             state, action = take_action_eps_greedy(
@@ -254,9 +254,12 @@ if __name__ == '__main__':
                 json.dump(config._to_dict(), f, indent=4)
     
     # 最後に保存(直前にしていればしない)
-    if not episode % qc.save_interval == qc.save_interval - 1:
+    if episode % qc.save_interval != qc.save_interval - 1:
         d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-                mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
-                            f"results/001_QLearning/{d}-mainQN.h5")
-                with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
-                    json.dump(config._to_dict(), f, indent=4)
+        mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
+                    f"results/001_QLearning/{d}-mainQN.h5")
+        with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
+            json.dump(config._to_dict(), f, indent=4)
+
+if __name__ == "__main__":
+    learn()
