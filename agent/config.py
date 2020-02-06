@@ -22,7 +22,7 @@ class ModelConfig(ConfigBase):
 class QLearnConfig(ConfigBase):
     
     def __init__(self):
-        self.DQN_MODE = True  # TrueがDQN、FalseがDDQNです
+        self.DQN_MODE = False  # TrueがDQN、FalseがDDQN
 
         self.num_episodes = 60  # 総試行回数
         self.max_number_of_steps = 25  # 1試行のstep数
