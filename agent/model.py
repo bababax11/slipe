@@ -107,7 +107,7 @@ class QNetwork:
             target = reward_b  # type: int
 
             # if not (next_state_b == 0).all():
-            # 価値計算（DDQNにも対応できるように、行動決定のQネットワークと価値観数のQネットワークは分離）
+            # 価値計算（DDQNにも対応できるように、行動決定のQネットワークと価値関数のQネットワークは分離）
             retmainQs = self.model.predict(next_state_b)
             next_action = np.argmax(retmainQs)  # 最大の報酬を返す行動を選択する
             target = reward_b + gamma * \
@@ -116,8 +116,8 @@ class QNetwork:
             targets[i] = self.model.predict(state_b)[0][0]   # Qネットワークの出力
             # 教師信号 action_b: int <= 100
             targets[i, action_b] = target
-            # epochsは訓練データの反復回数、verbose=0は表示なしの設定
-            self.model.fit(inputs, targets, epochs=1, verbose=0)
+        # epochsは訓練データの反復回数、verbose=0は表示なしの設定
+        self.model.fit(inputs, targets, epochs=1, verbose=0)
 
     @staticmethod
     def fetch_digest(weight_path: str):
@@ -195,7 +195,7 @@ def learn(model_config_path=None, weight_path=None):
         state = gs.random_play()  # 1step目は適当な行動をとる
         episode_reward = 0
 
-        targetQN = mainQN   # 行動決定と価値計算のQネットワークをおなじにする
+        targetQN.model.set_weights(mainQN.model.get_weights())   # 行動決定と価値計算のQネットワークをおなじにする
 
         for t in range(qc.max_number_of_steps):  # 2手のループ
             board = gs.to_inputs()
@@ -223,7 +223,7 @@ def learn(model_config_path=None, weight_path=None):
                 mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
 
             if qc.DQN_MODE:
-                targetQN = mainQN  # 行動決定と価値計算のQネットワークをおなじにする
+                targetQN.model.set_weights(mainQN.model.get_weights()) # 行動決定と価値計算のQネットワークをおなじにする
 
             # 1施行終了時の処理
             if state != Winner.not_ended:
@@ -276,5 +276,6 @@ def learn(model_config_path=None, weight_path=None):
 
 
 if __name__ == "__main__":
-    learn("results/001_QLearning/2020-02-06-11-01-48-mainQN.json",
-          "results/001_QLearning/2020-02-06-11-01-48-mainQN.h5")
+    learn()
+    # learn("results/001_QLearning/2020-02-06-11-01-48-mainQN.json",
+    #       "results/001_QLearning/2020-02-06-11-01-48-mainQN.h5")
