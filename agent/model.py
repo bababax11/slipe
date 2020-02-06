@@ -111,10 +111,10 @@ class QNetwork:
             return m.hexdigest()
 
     def load(self, config_path, weight_path) -> bool:
-        if os.path.exists(config_path) and os.path.exists(weight_path):
+        if os.path.exists(weight_path): # os.path.exists(config_path) and 
             logger.debug(f"loading model from {config_path}")
-            with open(config_path, "rt") as f:
-                self.model = Model.from_config(json.load(f))
+            # with open(config_path, "rt") as f:
+            #     self.model = Model.from_config(json.load(f))
             self.model.load_weights(weight_path)
             self.digest = self.fetch_digest(weight_path)
             logger.debug(f"loaded model digest = {self.digest}")

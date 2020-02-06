@@ -6,8 +6,12 @@ import wx
 from wx.core import CommandEvent
 from .errors import ChoiceOfMovementError
 from .game_state import GameState, Winner
+from agent.model import QNetwork
+from agent.config import Config
 
 logger = getLogger(__name__)
+
+WEIGHT_PATH = "results/001_QLearning/2020-02-06-08-33-17-mainQN-60times.h5"
 
 
 def start():
@@ -89,11 +93,16 @@ class Frame(wx.Frame):
         self.CPU_thinking = False
         self.piece_selected = False
         if self.game_mode == GameMode.humans_play or \
-                self.game_mode == GameMode.black_human_vs_random or \
-                self.game_mode == GameMode.black_human_vs_ML:
+                self.game_mode == GameMode.black_human_vs_random:
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_random:
             self.gs.random_play()
+            self.panel.Refresh()
+        elif self.game_mode == GameMode.black_human_vs_ML:
+            self.model = QNetwork(config=Config())
+            successfully_loaded = self.model.load(None, WEIGHT_PATH)
+            if not successfully_loaded:
+                raise FileNotFoundError(f"{WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
 
     def try_move(self, event):
@@ -145,8 +154,9 @@ class Frame(wx.Frame):
     def OnTimer(self, event):
         if self.game_mode != GameMode.black_human_vs_ML:
             state, _ = self.gs.random_play()
-        # else:
-        #     state, _ = 
+        else:
+            retTargetQs = self.model.model.predict(self.gs.to_inputs())[0]
+            state, _ = self.gs.outputs_to_move_max(retTargetQs)
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
