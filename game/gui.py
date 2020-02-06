@@ -105,7 +105,7 @@ class Frame(wx.Frame):
                 raise FileNotFoundError(f"{WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
 
-    def try_move(self, event):
+    def try_move(self, event) -> None:
         if self.finished or self.CPU_thinking:
             return
         event_x, event_y = event.GetX(), event.GetY()
@@ -153,7 +153,7 @@ class Frame(wx.Frame):
             # self.gs.random_play()
             # self.panel.Refresh()
 
-    def OnTimer(self, event):
+    def OnTimer(self, event) -> None:
         if self.game_mode != GameMode.black_human_vs_ML:
             state, _ = self.gs.random_play()
         else:
@@ -164,7 +164,7 @@ class Frame(wx.Frame):
         self.timer.Stop()
         self.CPU_thinking = False
 
-    def check_game_end(self, state: Winner):
+    def check_game_end(self, state: Winner) -> None:
         if state == Winner.plus:
             print(self.gs)
             print("先手勝利")
@@ -178,7 +178,7 @@ class Frame(wx.Frame):
             self.SetStatusText("後手勝利")
             print(self.logs)
 
-    def update_status_bar(self):
+    def update_status_bar(self) -> None:
         if self.finished:
             return
         if self.CPU_thinking:
@@ -236,7 +236,7 @@ class Frame(wx.Frame):
                                        i * py + py/4, px/2, py/2)
         self.update_status_bar()
 
-    def handle_quit(self, event: CommandEvent):
+    def handle_quit(self, event: CommandEvent) -> None:
         self.Close()
 
 
