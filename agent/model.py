@@ -33,7 +33,7 @@ class QNetwork:
         self.digest = None
         self.build()
 
-    def build(self):
+    def build(self) -> None:
         mc = self.config.model
         in_x = x = Input((4, 5, 5))
 
@@ -80,7 +80,7 @@ class QNetwork:
         return x
 
     # 重みの学習
-    def replay(self, memory, batch_size, gamma, targetQN) -> None:
+    def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: QNetwork) -> None:
         inputs = np.zeros((batch_size, 4, 5, 5))
         targets = np.zeros((batch_size, 100))
         mini_batch = memory.sample(batch_size)
@@ -103,14 +103,14 @@ class QNetwork:
             self.model.fit(inputs, targets, epochs=1, verbose=0)
 
     @staticmethod
-    def fetch_digest(weight_path):
+    def fetch_digest(weight_path: str):
         if os.path.exists(weight_path):
             m = hashlib.sha256()
             with open(weight_path, "rb") as f:
                 m.update(f.read())
             return m.hexdigest()
 
-    def load(self, config_path, weight_path) -> bool:
+    def load(self, config_path: str, weight_path: str) -> bool:
         if os.path.exists(weight_path):  # os.path.exists(config_path) and
             logger.debug(f"loading model from {config_path}")
             # with open(config_path, "rt") as f:
@@ -124,7 +124,7 @@ class QNetwork:
                 f"model files does not exist at {config_path} and {weight_path}")
             return False
 
-    def save(self, config_path, weight_path) -> None:
+    def save(self, config_path: str, weight_path: str) -> None:
         logger.debug(f"save model to {config_path}")
         with open(config_path, "wt") as f:
             json.dump(self.model.get_config(), f)
@@ -138,10 +138,10 @@ class Memory:
     def __init__(self, max_size=1000) -> None:
         self.buffer = deque(maxlen=max_size)
 
-    def add(self, experience) -> None:
+    def add(self, experience: Any) -> None:
         self.buffer.append(experience)
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int) -> list:
         indices = np.random.choice(
             np.arange(len(self.buffer)), size=batch_size, replace=False)
         return [self.buffer[ii] for ii in indices]
@@ -151,7 +151,9 @@ class Memory:
 
 
 # [C]ｔ＋１での行動を返す
-def get_action(board: np.ndarray, episode: int, mainQN: QNetwork, gs: GameState) -> Tuple[Winner, int]:
+def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs: GameState) -> Tuple[Winner, int]:
+    """boardは入力の型(README参照)で与えること
+    returnは勝利判定と打った手"""
     # 徐々に最適行動のみをとる、ε-greedy法
     epsilon = 0.001 + 0.9 / (1.0+episode)
 
@@ -185,7 +187,7 @@ if __name__ == '__main__':
         for t in range(qc.max_number_of_steps + 1):  # 2手のループ
             board = gs.to_inputs()
 
-            state, action = get_action(
+            state, action = take_action_eps_greedy(
                 board, episode, mainQN, gs)   # 時刻tでの行動を決定する
             # next_state, reward, done, info = env.step(action)   # 行動a_tの実行による、s_{t+1}, _R{t}を計算する
 
@@ -245,7 +247,7 @@ if __name__ == '__main__':
         #     print('Episode %d train agent successfuly!' % episode)
             # islearned = True
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    mainQN.save(f"results/001_QLearning/{d}-mainQN-test-.json",
-                f"results/001_QLearning/{d}-mainQN-test.h5")
-    with open(f"results/001_QLearning/{d}-test.json", 'x') as f:
+    mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
+                f"results/001_QLearning/{d}-mainQN.h5")
+    with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
         json.dump(config._to_dict(), f, indent=4)
