@@ -35,13 +35,17 @@ class GameState:
              [1,  1,  2,  1,  1]], dtype=np.int8)
         self.turn = 1  # +が先攻
 
-    def to_inputs(self) -> np.ndarray:
+    def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力"""
         arr = np.empty((1, 4, 5, 5), dtype=bool)
-        arr[0, 0] = self.board == 1
-        arr[0, 1] = self.board == -1
-        arr[0, 2] = self.board == 2
-        arr[0, 3] = self.board == -2
+        if not flip:
+            b = self.board
+        else:
+            b = np.flip(self.board * -1, 0)
+        arr[0, 0] = b == 1
+        arr[0, 1] = b == -1
+        arr[0, 2] = b == 2
+        arr[0, 3] = b == -2
         return arr
 
     def __repr__(self) -> str:
