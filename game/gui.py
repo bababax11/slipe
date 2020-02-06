@@ -27,6 +27,7 @@ class GameMode(IntEnum):
     humans_play = 1
     black_human_vs_random = 2
     white_human_vs_random = 3
+    black_human_vs_ML = 4
 
 
 class Frame(wx.Frame):
@@ -55,20 +56,25 @@ class Frame(wx.Frame):
                     u"New Game (Black) vs random")
         menu.Append(GameMode.white_human_vs_random,
                     u"New Game (White) vs random")
-        menu.AppendSeparator()
+        # menu.AppendSeparator()
+        menu.Append(GameMode.black_human_vs_ML,
+                    u"New Game (Black) vs ML")
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
-        # menu.AppendSeparator()
+        menu.AppendSeparator()
         menu.Append(9, u"quit")
         menu_bar = wx.MenuBar()
         menu_bar.Append(menu, u"menu")
         self.SetMenuBar(menu_bar)
 
-        self.Bind(wx.EVT_MENU, self.handle_new_game, id=GameMode.humans_play)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.humans_play)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.black_human_vs_random)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.white_human_vs_random)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.black_human_vs_ML)
         self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
 
         # status bar
@@ -83,7 +89,8 @@ class Frame(wx.Frame):
         self.CPU_thinking = False
         self.piece_selected = False
         if self.game_mode == GameMode.humans_play or \
-                self.game_mode == GameMode.black_human_vs_random:
+                self.game_mode == GameMode.black_human_vs_random or \
+                self.game_mode == GameMode.black_human_vs_ML:
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_random:
             self.gs.random_play()
@@ -128,14 +135,18 @@ class Frame(wx.Frame):
         self.piece_selected = False
         self.panel.Refresh()
         if self.game_mode == GameMode.black_human_vs_random or \
-                self.game_mode == GameMode.white_human_vs_random:
+                self.game_mode == GameMode.white_human_vs_random or \
+                self.game_mode == GameMode.black_human_vs_ML:
             self.timer.Start(1000)  # 1000ms後OnTimer()が反応
             self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
 
     def OnTimer(self, event):
-        state = self.gs.random_play()
+        if self.game_mode != GameMode.black_human_vs_ML:
+            state, _ = self.gs.random_play()
+        # else:
+        #     state, _ = 
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
