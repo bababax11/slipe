@@ -27,11 +27,28 @@ from game.game_state import GameState, Winner
 logger = getLogger(__name__)
 
 
+class Memory:
+    """Experience ReplayとFixed Target Q-Networkを実現するメモリクラス"""
+
+    def __init__(self, max_size=1000) -> None:
+        self.buffer = deque(maxlen=max_size)
+
+    def add(self, experience: Any) -> None:
+        self.buffer.append(experience)
+
+    def sample(self, batch_size: int) -> list:
+        indices = np.random.choice(
+            np.arange(len(self.buffer)), size=batch_size, replace=False)
+        return [self.buffer[ii] for ii in indices]
+
+    def __len__(self) -> int:
+        return len(self.buffer)
+
+
 class QNetwork:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.digest = None
-        self.build()
 
     def build(self) -> None:
         mc = self.config.model
@@ -80,7 +97,7 @@ class QNetwork:
         return x
 
     # 重みの学習
-    def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: QNetwork) -> None:
+    def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
         inputs = np.zeros((batch_size, 4, 5, 5))
         targets = np.zeros((batch_size, 100))
         mini_batch = memory.sample(batch_size)
@@ -113,9 +130,12 @@ class QNetwork:
     def load(self, config_path: str, weight_path: str) -> bool:
         if os.path.exists(weight_path):  # os.path.exists(config_path) and
             logger.debug(f"loading model from {config_path}")
-            # with open(config_path, "rt") as f:
-            #     self.model = Model.from_config(json.load(f))
+            with open(config_path, "rt") as f:
+                self.model = Model.from_config(json.load(f))
             self.model.load_weights(weight_path)
+            self.model.compile(loss='mse',
+                optimizer=Adam(lr=self.config.model.learning_rate))
+            self.model.summary()
             self.digest = self.fetch_digest(weight_path)
             logger.debug(f"loaded model digest = {self.digest}")
             return True
@@ -131,23 +151,6 @@ class QNetwork:
         self.model.save_weights(weight_path)
         self.digest = self.fetch_digest(weight_path)
         logger.debug(f"saved model digest {self.digest}")
-
-
-class Memory:
-    """Experience ReplayとFixed Target Q-Networkを実現するメモリクラス"""
-    def __init__(self, max_size=1000) -> None:
-        self.buffer = deque(maxlen=max_size)
-
-    def add(self, experience: Any) -> None:
-        self.buffer.append(experience)
-
-    def sample(self, batch_size: int) -> list:
-        indices = np.random.choice(
-            np.arange(len(self.buffer)), size=batch_size, replace=False)
-        return [self.buffer[ii] for ii in indices]
-
-    def __len__(self) -> int:
-        return len(self.buffer)
 
 
 def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs: GameState) -> Tuple[Winner, int]:
@@ -167,14 +170,24 @@ def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs
     return s
 
 
-def learn():
+def learn(model_config_path=None, weight_path=None):
     config = Config()
     qc = config.Qlearn
 
     total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納
     # Qネットワークとメモリ、Actorの生成--------------------------------------------------------
-    mainQN = QNetwork(config)     # メインのQネットワーク
-    targetQN = QNetwork(config)   # 価値を計算するQネットワーク
+    if model_config_path is None or weight_path is None:
+        mainQN = QNetwork(config)     # メインのQネットワーク
+        mainQN.build()
+        targetQN = QNetwork(config)   # 価値を計算するQネットワーク
+        targetQN.build()
+    else:
+        mainQN = QNetwork(config)
+        success_load = mainQN.load(model_config_path, weight_path)
+        if not success_load:
+            raise FileNotFoundError(f"{model_config_path} {weight_path}が読み込めませんでした")
+        targetQN = QNetwork(config)
+        targetQN.load(model_config_path, weight_path)
     memory = Memory(max_size=qc.memory_size)
 
     for episode in trange(qc.num_episodes):  # 試行数分繰り返す
@@ -207,7 +220,7 @@ def learn():
 
             # Qネットワークの重みを学習・更新する replay
             if len(memory) > qc.batch_size:  # and not islearned:
-                mainQN.replay(memory, qc.batch_size, gamma, targetQN)
+                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
 
             if qc.DQN_MODE:
                 targetQN = mainQN  # 行動決定と価値計算のQネットワークをおなじにする
@@ -252,7 +265,7 @@ def learn():
                         f"results/001_QLearning/{d}-mainQN.h5")
             with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
                 json.dump(config._to_dict(), f, indent=4)
-    
+
     # 最後に保存(直前にしていればしない)
     if episode % qc.save_interval != qc.save_interval - 1:
         d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -261,5 +274,7 @@ def learn():
         with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
             json.dump(config._to_dict(), f, indent=4)
 
+
 if __name__ == "__main__":
-    learn()
+    learn("results/001_QLearning/2020-02-06-11-01-48-mainQN.json",
+          "results/001_QLearning/2020-02-06-11-01-48-mainQN.h5")

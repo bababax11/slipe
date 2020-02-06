@@ -11,7 +11,9 @@ from agent.config import Config
 
 logger = getLogger(__name__)
 
-WEIGHT_PATH = "results/001_QLearning/2020-02-06-08-33-17-mainQN-60times.h5"
+MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-06-11-01-48-mainQN.json"
+WEIGHT_PATH = "results/001_QLearning/2020-02-06-11-01-48-mainQN.h5"
+# WEIGHT_PATH = "results/001_QLearning/2020-02-06-08-33-17-mainQN-60times.h5"
 
 
 def start():
@@ -100,9 +102,9 @@ class Frame(wx.Frame):
             self.panel.Refresh()
         elif self.game_mode == GameMode.black_human_vs_ML:
             self.model = QNetwork(config=Config())
-            successfully_loaded = self.model.load(None, WEIGHT_PATH)
-            if not successfully_loaded:
-                raise FileNotFoundError(f"{WEIGHT_PATH}が読み込めませんでした")
+            success_load= self.model.load(MODEL_CONFIG_PATH, WEIGHT_PATH)
+            if not success_load:
+                raise FileNotFoundError(f"{MODEL_CONFIG_PATH} {WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
 
     def try_move(self, event) -> None:
