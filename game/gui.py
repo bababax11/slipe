@@ -143,10 +143,12 @@ class Frame(wx.Frame):
         self.check_game_end(state)
         self.piece_selected = False
         self.panel.Refresh()
+        if self.finished:
+            return
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random or \
                 self.game_mode == GameMode.black_human_vs_ML:
-            self.timer.Start(1000)  # 1000ms後OnTimer()が反応
+            self.timer.Start(500)  # 1000ms後OnTimer()が反応
             self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
