@@ -133,8 +133,8 @@ class QNetwork:
         logger.debug(f"saved model digest {self.digest}")
 
 
-# [3]Experience ReplayとFixed Target Q-Networkを実現するメモリクラス
 class Memory:
+    """Experience ReplayとFixed Target Q-Networkを実現するメモリクラス"""
     def __init__(self, max_size=1000) -> None:
         self.buffer = deque(maxlen=max_size)
 
@@ -150,9 +150,9 @@ class Memory:
         return len(self.buffer)
 
 
-# [C]ｔ＋１での行動を返す
 def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs: GameState) -> Tuple[Winner, int]:
-    """boardは入力の型(README参照)で与えること
+    """ｔ＋１での行動を返す
+    boardは入力の型(README参照)で与えること
     returnは勝利判定と打った手"""
     # 徐々に最適行動のみをとる、ε-greedy法
     epsilon = 0.001 + 0.9 / (1.0+episode)
@@ -246,8 +246,17 @@ if __name__ == '__main__':
         # if total_reward_vec.mean() >= goal_average_reward:
         #     print('Episode %d train agent successfuly!' % episode)
             # islearned = True
-    d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
-                f"results/001_QLearning/{d}-mainQN.h5")
-    with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
-        json.dump(config._to_dict(), f, indent=4)
+        if episode % qc.save_interval == qc.save_interval - 1:
+            d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
+                        f"results/001_QLearning/{d}-mainQN.h5")
+            with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
+                json.dump(config._to_dict(), f, indent=4)
+    
+    # 最後に保存(直前にしていればしない)
+    if not episode % qc.save_interval == qc.save_interval - 1:
+        d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+                mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
+                            f"results/001_QLearning/{d}-mainQN.h5")
+                with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
+                    json.dump(config._to_dict(), f, indent=4)

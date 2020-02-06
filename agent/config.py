@@ -24,11 +24,11 @@ class QLearnConfig(ConfigBase):
     def __init__(self):
         self.DQN_MODE = False  # TrueがDQN、FalseがDDQN
 
-        self.num_episodes = 60  # 総ゲーム数
+        self.num_episodes = 50  # 総ゲーム数
         self.max_number_of_steps = 25  # 1ゲームの最大手数
         self.goal_average_reward = 50  # この報酬を超えると学習終了
         self.num_consecutive_iterations = 10  # 学習完了評価の平均計算を行う試行回数
-        self.save_interval = 50 # 50ゲームごとに保存
+        self.save_interval = 50 # このゲーム数ごとに保存
         self.gamma = 0.99    # 割引係数
         # ---
         self.hidden_size = 16               # Q-networkの隠れ層のニューロンの数
