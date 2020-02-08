@@ -216,19 +216,17 @@ def learn(model_config_path=None, weight_path=None):
 
             next_board = gs.to_inputs()
 
-            # board = next_board  # 状態更新
-
-            # Qネットワークの重みを学習・更新する replay
-            if len(memory) > qc.batch_size:  # and not islearned:
-                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
-
-            if qc.DQN_MODE:
-                targetQN.model.set_weights(mainQN.model.get_weights()) # 行動決定と価値計算のQネットワークをおなじにする
-
+                       # board = next_board  # 状態更新
             # 1施行終了時の処理
             if state != Winner.not_ended:
                 episode_reward += reward  # 合計報酬を更新
                 memory.add((board, action, reward, next_board))     # メモリの更新する
+                # Qネットワークの重みを学習・更新する replay
+                if len(memory) > qc.batch_size:  # and not islearned:
+                    mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+                if qc.DQN_MODE:
+                    targetQN.model.set_weights(mainQN.model.get_weights()) # 行動決定と価値計算のQネットワークをおなじにする
+
                 total_reward_vec = np.hstack(
                     (total_reward_vec[1:], episode_reward))  # 報酬を記録
                 print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
@@ -245,6 +243,14 @@ def learn(model_config_path=None, weight_path=None):
 
             episode_reward += reward  # 合計報酬を更新
             memory.add((board, action, reward, next_board))     # メモリの更新する
+
+            # Qネットワークの重みを学習・更新する replay
+            if len(memory) > qc.batch_size:  # and not islearned:
+                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+
+            if qc.DQN_MODE:
+                targetQN.model.set_weights(mainQN.model.get_weights()) # 行動決定と価値計算のQネットワークをおなじにする
+
 
             # 1施行終了時の処理
             if state != Winner.not_ended:

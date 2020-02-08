@@ -159,7 +159,7 @@ class GameState:
                 # print(argmax)
                 # print(np.unravel_index(argmax, (5, 5, 4)))
                 return state, argmax
-        return self.random_play()
+        return self.random_play(0)
 
     def outputs_to_move_random(self, outputs: np.ndarray) -> Tuple[Winner, int]:
         """出力からランダムに有効手を指す.
@@ -178,4 +178,4 @@ class GameState:
                 # print(np.unravel_index(r, (5, 5, 4)))
                 return state, r
 
-        return self.random_play()
+        return self.random_play(0)

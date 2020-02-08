@@ -11,18 +11,18 @@ from agent.config import Config
 
 logger = getLogger(__name__)
 
-MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-06-22-43-59-mainQN.json"
-WEIGHT_PATH = "results/001_QLearning/2020-02-06-22-43-59-mainQN.h5"
+MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-06-23-37-29-mainQN.json"
+WEIGHT_PATH = "results/001_QLearning/2020-02-06-23-37-29-mainQN.h5"
 # WEIGHT_PATH = "results/001_QLearning/2020-02-06-08-33-17-mainQN-60times.h5"
 
 
-def start():
+def start() -> None:
     app = wx.App()
     Frame().Show()
     app.MainLoop()
 
 
-def notify(caption, message):
+def notify(caption, message) -> None:
     dialog = wx.MessageDialog(None, message=message,
                               caption=caption, style=wx.OK)
     dialog.ShowModal()
